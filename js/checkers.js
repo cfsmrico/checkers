@@ -209,9 +209,10 @@ Checkers.prototype.isLegalBlackMoveAvailable = function(position, piece) {
 // player should be 'w' for white(/red) or 'b' for black
 // guiPosition is an object of the form: {b8: "bP", d8: "bP", f8: "bP", h8: "bP", a7: "bP"…}
 Checkers.prototype.gameOver = function(player, guiPosition) {
-  if (this.whitePieces + this.whiteKings < 0 || this.blackPieces + this.blackKings < 0 ||
-      !this.areAnyJumpsAvailable(player, guiPosition) || !this.areAnyMovesAvailable(player, guiPosition)) {
-          return true;    
+  if (this.whitePieces + this.whiteKings < 0 || this.blackPieces + this.blackKings < 0) {
+    if (!this.areAnyJumpsAvailable(player, guiPosition) && !this.areAnyMovesAvailable(player, guiPosition)) {
+      return true;    
+    }
   }
 
   return false;
