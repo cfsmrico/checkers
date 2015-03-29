@@ -1,7 +1,7 @@
 // upon constructing this object, reset the game to a standard Checkers (English-Draughts) game
 function Checkers() {
   this.resetGame();
-};
+}
 
 // reset the game to a standard Checkers game
 Checkers.prototype.resetGame = function() {
@@ -22,7 +22,32 @@ Checkers.prototype.resetGame = function() {
   this.whitePieces = 12;
   this.blackPieces = 12;
   this.whiteKings = 0;
-  this.blackKings = 0;  
+  this.blackKings = 0;
+
+  this.pieceBonus = [
+    [3, 0, 3, 0, 3, 0, 3, 0],
+    [0, 2, 0, 2, 0, 2, 0, 3],
+    [3, 0, 1, 0, 1, 0, 2, 0],
+    [0, 2, 0, 0, 0, 1, 0, 3],
+    [3, 0, 1, 0, 0, 0, 2, 0],
+    [0, 2, 0, 1, 0, 1, 0, 3],
+    [3, 0, 2, 0, 2, 0, 2, 0],
+    [0, 3, 0, 3, 0, 3, 0, 3],
+  ];
+
+  this.kingBonus = [
+    [-1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [1, 0, 3, 0, 2, 0, 0, 0],
+    [0, 1, 0, 1, 0, 2, 0, 0],
+    [0, 0, 2, 0, 1, 0, 1, 0],
+    [0, 0, 0, 2, 0, 3, 0, 1],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, -1],
+  ];
+
+  this.pieceValue = 2;
+  this.kingValue = 9;
 };
 
 // player should be 'w' for white(/red) or 'b' for black
@@ -245,6 +270,23 @@ Checkers.prototype.fileToCol = function(file) {
     case 'h': return 7;
   }
 };
+
+Checkers.prototype.getPositionOf = function(board) {
+  var position = {};
+
+  for (var c = 0; c < 8; ++c) {
+    for (var r = 0; r < 8; ++r) {
+      var file = this.colToFile(c);
+      var rank = r + 1;
+
+      if (board[r][c] != '') {
+        position[file + rank] = board[r][c];
+      }
+    }
+  }
+
+  return position;  
+}
 
 // return a position object from square representation
 Checkers.prototype.getPosition = function() {
@@ -517,4 +559,59 @@ Checkers.prototype.moveNoCheck = function(r1, c1, r2, c2) {
     square[r2][c2] = square[r1][c1];
 
   square[r1][c1] = '';
+};
+
+// here we go...
+Checkers.prototype.negamax = function(board, depth, player) {
+  if (depth === 0 || this.gameOver(player, this.getPositionOf(board)))
+    return this.staticEval(player, board);
+
+  var bestValue = Number.MIN_VALUE;
+
+  // for all possible child moves
+    var val = -negamax(child, depth - 1, player == 'w' ? 'b' : 'w');
+    bestValue = max(bestValue, val);
+
+  return bestValue;
+};
+
+
+Checkers.prototype.playerEval = function(player, board) {
+  if (player == 'b') {
+    return -this.staticEval(board);
+  } else {
+    return this.staticEval(board);
+  }
+};
+
+Checkers.prototype.staticEval = function(board) {
+  var score = 0;
+
+  for (var r = 0; r < 8; ++r) {
+    for (var c = 0; c < 8; ++c) {
+      var piece = board[r][c];
+      if (piece == '')
+        continue;
+
+        if (piece == 'wP') {
+          score += 2;
+          score += this.pieceBonus[r][c];
+          console.log('gained ' + this.pieceBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+        } else if (piece == 'wK') {
+          score += 9;
+          score += this.kingBonus[r][c];
+          console.log('gained ' + this.kingBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+        } else if (piece == 'bP') {
+          score -= 2; 
+          score -= this.pieceBonus[r][c];
+          console.log('lost ' + this.pieceBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+        } else {  // piece == 'bK' 
+          score -= 9; 
+          score -= this.kingBonus[r][c];
+          console.log('lost ' + this.kingBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+        }
+    }
+  }  
+
+  return score;
 };

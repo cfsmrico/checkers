@@ -11,6 +11,7 @@
 
 <div id="board" style="width: 400px"></div>
 <p>Status: <span id="statusEl"></span></p>
+<script src="js/ai.js"></script>
 <script src="js/checkers.js"></script>
 <script src="js/lodash.js"></script>
 <script src="js/json3.min.js"></script>
@@ -25,6 +26,7 @@
   currentPlayer = 'w';
   multiJump = false;
   multiJumpStepPosition = '';
+  ai = new ai(game);
 
 // do not pick up pieces if the game is over
 // only pick up pieces for the side to move
@@ -135,9 +137,12 @@ var updateStatus = function(msg) {
     }
   }
 */
+  status = currentPlayer + ' to move';
   statusEl.html(status);
   //fenEl.html(game.fen());
   //pgnEl.html(game.pgn());
+
+//  aiMove();
 };
 
 var cfg = {
