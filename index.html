@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <title>Player vs Player</title>
+  <link rel="stylesheet" href="css/chessboard.css" />
+</head>
+<body>
+</p>
+
+<div id="board" style="width: 400px"></div>
+<p>Status: <span id="statusEl"></span></p>
+<script src="js/checkers.js"></script>
+<script src="js/lodash.js"></script>
+<script src="js/json3.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/gui.js"></script>
+<script>
+  board;
+  game = new Checkers();
+  statusEl = $('#status');
+  fenEl = $('#fen');
+  pgnEl = $('#pgn');  
+  currentPlayer = 'w';
+  multiJump = false;
+  multiJumpStepPosition = '';
+
+// do not pick up pieces if the game is over
+// only pick up pieces for the side to move
+var onDragStart = function(source, piece, position, orientation) {
+  //if (game.gameOver()) {
+    //return false;
+  //}  
+
+  if (piece[0] != currentPlayer) {
+    return false;
+  }
+};
+
+var onDrop = function(source, target) {
+  if (target == 'offboard') {
+    return 'snapback';
+  }
+
+  if (multiJump === true && multiJumpStepPosition != source) {
+    return 'snapback';
+  }
+
+  var jumpAvailable = false;
+  var madeJump = false;
+  var madeMove = false;
+  var msg = '';
+  //retVal = game.move(source, target);
+
+  if (game.areAnyJumpsAvailable(currentPlayer, board.position())) {
+    jumpAvailable = true;
+
+    if (game.rankFileJump(source[0], source[1], target[0], target[1], currentPlayer)) {
+        madeJump = true;        
+    } else {
+      return 'snapback';  
+    }
+
+    board.move(source+'-'+target);
+    console.log('target: ' + target);
+    console.log('board pos target' + board.position()[target]);
+
+    if (game.isLegalJumpAvailable(currentPlayer, target, board.position()[target])) {
+      multiJump = true;
+      multiJumpStepPosition = target;
+    } else {
+      currentPlayer = currentPlayer == 'w' ? 'b' : 'w';      
+      multiJump = false;
+      multiJumpStepPosition = '';
+    }
+  } else {
+    if (game.rankFileMove(source[0], source[1], target[0], target[1], currentPlayer)) {
+      madeMove = true;
+      currentPlayer = currentPlayer == 'w' ? 'b' : 'w';
+    }
+  }
+
+  if (!madeJump && !madeMove) {
+    console.log('illegal move attempted from ' + source + ' to ' + target);
+    msg = ' must make legal jump';
+    return 'snapback';    
+  }
+
+  if (madeJump) {
+    console.log('jump made from ' + source + ' to ' + target);
+  } else {
+    console.log('move made from ' + source + ' to ' + target);
+  }
+
+  updateStatus(msg);
+};
+
+// update the board position after the piece snap 
+// for castling, en passant, pawn promotion
+var onSnapEnd = function() {
+  var position = game.getPosition();
+  console.log(position);
+  board.position(position);
+};
+
+var updateStatus = function(msg) {
+  var status = msg;
+  if (game.gameOver()) {
+    status = 'game over!';
+  }
+/*
+  var moveColor = 'White';
+  if (game.turn() === 'b') {
+    moveColor = 'Black';
+  }
+
+  // checkmate?
+  if (game.in_checkmate() === true) {
+    status = 'Game over, ' + moveColor + ' is in checkmate.';
+  }
+
+  // draw?
+  else if (game.in_draw() === true) {
+    status = 'Game over, drawn position';
+  }
+
+  // game still on
+  else {
+    status = moveColor + ' to move';
+
+    // check?
+    if (game.in_check() === true) {
+      status += ', ' + moveColor + ' is in check';
+    }
+  }
+*/
+  statusEl.html(status);
+  //fenEl.html(game.fen());
+  //pgnEl.html(game.pgn());
+};
+
+var cfg = {
+  draggable: true,
+  position: 'start',
+  onDragStart: onDragStart,
+  onDrop: onDrop,
+  onSnapEnd: onSnapEnd,
+};
+
+board = new ChessBoard('board', cfg);
+
+updateStatus();
+</script>
+</body>
+</html>
