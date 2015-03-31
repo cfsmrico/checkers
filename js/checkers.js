@@ -19,10 +19,7 @@ Checkers.prototype.resetGame = function() {
   ];
 
   // init running piece count
-  this.whitePieces = 12;
-  this.blackPieces = 12;
-  this.whiteKings = 0;
-  this.blackKings = 0;
+  this.move;
 
   this.pieceBonus = [
     [3, 0, 3, 0, 3, 0, 3, 0],
@@ -48,6 +45,16 @@ Checkers.prototype.resetGame = function() {
 
   this.pieceValue = 2;
   this.kingValue = 9;
+};
+
+Array.prototype.clone = function() {
+  var arr = this.slice(0);
+  for (var i = 0; i < this.length; ++i) {
+    if (this[i].clone) {
+      arr[i] = this[i].clone();
+    }
+  }
+  return arr;
 };
 
 // player should be 'w' for white(/red) or 'b' for black
@@ -234,10 +241,8 @@ Checkers.prototype.isLegalBlackMoveAvailable = function(position, piece) {
 // player should be 'w' for white(/red) or 'b' for black
 // guiPosition is an object of the form: {b8: "bP", d8: "bP", f8: "bP", h8: "bP", a7: "bP"…}
 Checkers.prototype.gameOver = function(player, guiPosition) {
-  if (this.whitePieces + this.whiteKings < 0 || this.blackPieces + this.blackKings < 0) {
-    if (!this.areAnyJumpsAvailable(player, guiPosition) && !this.areAnyMovesAvailable(player, guiPosition)) {
-      return true;    
-    }
+  if (!this.areAnyJumpsAvailable(player, guiPosition) && !this.areAnyMovesAvailable(player, guiPosition)) {
+    return true;    
   }
 
   return false;
@@ -310,11 +315,11 @@ Checkers.prototype.getPosition = function() {
  *    If moving the piece from square[r1][c1] to square[r2][c2]
  *  violates Checkers rules, then return true, and false otherwise.
  */
-Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player) {
+Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player, square) {
   if (r2 < 0 || c2 < 0 || r2 > 7 || c2 > 7)  // out of bounds
     return true;
 
-  var square = this.square;
+  var square = square == undefined ? this.square : square;
 
   if (square[r2][c2] != '') // square not empty
     return true;
@@ -339,11 +344,11 @@ Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player) {
  *    If moving the piece from square[r1][c1] to square[r2][c2]
  *  violates Checkers rules, then return true, and false otherwise.
  */
-Checkers.prototype.isIllegalJump = function(r1, c1, r2, c2, player) {
+Checkers.prototype.isIllegalJump = function(r1, c1, r2, c2, player, square) {
   if (r2 < 0 || c2 < 0 || r2 > 7 || c2 > 7)  // out of bounds
     return true;
 
-  var square = this.square;
+  var square = square == undefined ? this.square : square;
 
   if (square[r2][c2] != '')  // square2 not empty
     return true;
@@ -432,13 +437,9 @@ Checkers.prototype.movePiece = function(r1, c1, r2, c2, player) {
 
   if (r2 == 0 && square[r1][c1] == 'bP') {
     square[r2][c2] = 'bK';  // crown the black piece
-    ++this.blackKings;
-    --this.blackPieces;
   }
   else if (r2 == 7 && square[r1][c1] == 'wP') {
     square[r2][c2] = 'wK';   // crown the white piece
-    ++this.whiteKings;
-    --this.whitePieces;
   }
   else
     square[r2][c2] = square[r1][c1];  // advance the piece
@@ -461,77 +462,49 @@ Checkers.prototype.jumpPiece = function(r1, c1, r2, c2, player) {
 };
 
 // move the piece on square[r1][c1] to square[r2][c2] without checking for an illegal jump
-Checkers.prototype.jumpNoCheck = function(r1, c1, r2, c2)
+Checkers.prototype.jumpNoCheck = function(r1, c1, r2, c2, board)
 {
-  var square = this.square;
-  var pieceToRemove;
+  var square = board == undefined ? this.square : board;
 
   if (r1 < r2 && c1 < c2) // jump NE from (r1, c1) -> (r2, c2)
   {
     if (r2 == 7 && square[r1][c1] == 'wP') {
       square[r2][c2] = 'wK';   // crown the white piece
-      ++this.whiteKings;
-      --this.whitePieces;
     }
     else
       square[r2][c2] = square[r1][c1];
 
-    pieceToRemove = square[r1 + 1][c1 + 1];
     square[r1 + 1][c1 + 1] = '';
   }
   else if (r1 < r2 && c2 < c1)  // move NW from (r1, c1) -> (r2, c2)
   {
     if (r2 == 7 && square[r1][c1] == 'wP') {
       square[r2][c2] = 'wK';   // crown the white piece
-      ++this.whiteKings;
-      --this.whitePieces;
     }
     else
       square[r2][c2] = square[r1][c1];
 
-    pieceToRemove = square[r1 + 1][c1 - 1];
     square[r1 + 1][c1 - 1] = '';    
   }
   else if (r2 < r1 && c2 < c1)  // move SW from (r1, c1) -> (r2, c2)
   {
     if (r2 == 0 && square[r1][c1] == 'bP') {
       square[r2][c2] = 'bK';  // crown the black piece
-      ++this.blackKings;
-      --this.blackPieces;
     }
     else
       square[r2][c2] = square[r1][c1];
 
-    pieceToRemove = square[r1 - 1][c1 - 1];
     square[r1 - 1][c1 - 1] = '';    
   }
   else  // move SE from (r1, c1) -> (r2, c2)
   {
     if (r2 == 0 && square[r1][c1] == 'bP') {
       square[r2][c2] = 'bK';  // crown the black piece
-      ++this.blackKings;
-      --this.blackPieces;
     }
     else
       square[r2][c2] = square[r1][c1];
 
-    pieceToRemove = square[r1 - 1][c1 + 1];
     square[r1 - 1][c1 + 1] = '';
-  }
-
-  switch (pieceToRemove) {
-    case 'wP': 
-      --this.whitePieces;
-      break;
-    case 'wK':
-      --this.whiteKings;
-      break;
-    case 'bP':
-      --this.blackPieces;
-      break;
-    case 'bK':
-      --this.blackKings;
-      break;
   }
 
   square[r1][c1] = '';  // clear origin square
@@ -542,18 +515,14 @@ Checkers.prototype.jumpNoCheck = function(r1, c1, r2, c2)
  *    Move the piece on square[r1][c1] to square[r2][c2]
  *  without checking for an illegal move
  */
-Checkers.prototype.moveNoCheck = function(r1, c1, r2, c2) {
-  var square = this.square;
+Checkers.prototype.moveNoCheck = function(r1, c1, r2, c2, board) {
+  var square = board == undefined ? this.square : board;
 
   if (r2 == 0 && square[r1][c1] == 'bP') {
     square[r2][c2] = 'bK';  // crown the black piece
-    ++this.blackKings;
-    --this.blackPieces;
   }
   else if (r2 == 7 && square[r1][c1] == 'wP') {
     square[r2][c2] = 'wK';   // crown the white piece
-    ++this.whiteKings;
-    --this.whitePieces;
   }
   else
     square[r2][c2] = square[r1][c1];
@@ -561,18 +530,96 @@ Checkers.prototype.moveNoCheck = function(r1, c1, r2, c2) {
   square[r1][c1] = '';
 };
 
+Checkers.prototype.opposite = function(player) {
+  if (player == 'w') {
+    return 'b';
+  }
+
+  return 'w';
+}
+
 // here we go...
-Checkers.prototype.negamax = function(board, depth, player) {
-  if (depth === 0 || this.gameOver(player, this.getPositionOf(board)))
-    return this.staticEval(player, board);
+Checkers.prototype.minimax = function(board, depth, player) {
+  var bCopy;
+  var valuePath = {Path: [], Value: 0};
+  var resultSucc = {Path: [], Value: 0};
+  var legalMoves = [];
+  var legalJumps = [];
+  var bestPath = {Path: [], Value: 0};
+  var jumpSequence = [];
 
-  var bestValue = Number.MIN_VALUE;
+  if (depth == 0 || this.gameOver(player, this.getPositionOf(board))) {
+    valuePath.Value = this.staticEval(board);
+    return valuePath;
+  } else {
+    this.moveGen(board, player, legalMoves, legalJumps);
+  }
 
-  // for all possible child moves
-    var val = -negamax(child, depth - 1, player == 'w' ? 'b' : 'w');
-    bestValue = max(bestValue, val);
+  if (legalMoves.length < 1 && legalJumps.length < 1) {
+    valuePath.Value = this.staticEval(board);
+    return valuePath;
+  }
 
-  return bestValue;
+  var bestScore = player == 'w' ? Number.MIN_VALUE : Number.MAX_VALUE;
+  var newValue;
+
+  if (!legalJumps.length < 1) {
+    for (var i = 0; i < legalJumps.length; ++i) {
+      bCopy = board.clone();
+
+      for (var k = 0; k < legalJumps[i].length; ++k) {
+        move = legalJumps[i][k];
+        this.jumpNoCheck(move[0], move[1], move[2], move[3], bCopy);
+      }
+
+      resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
+      newValue = -resultSucc.Value;
+
+      if (player == 'w') {
+        if (newValue > bestScore) {
+          bestScore = newValue;
+          resultSucc.Path.push(legalJumps[i]);
+          bestPath = resultSucc;
+        } 
+      }
+      else {
+        if (newValue < bestScore) {
+           bestScore = newValue;
+           resultSucc.Path.push(legalJumps[i]);
+           bestPath = resultSucc;
+        }
+      }
+    }
+  } 
+  else {  // !legalMoves.empty()
+    for (var i = 0; i < legalMoves.length; ++i) {
+      bCopy = board.clone();
+      move = legalMoves[i];
+      this.moveNoCheck(move[0], move[1], move[2], move[3], bCopy);
+      resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
+      newValue = -resultSucc.Value;
+
+      if (player == 'w') {
+        if (newValue > bestScore) {
+          bestScore = newValue;
+          resultSucc.Path.push(legalMoves[i]);
+          bestPath = resultSucc;
+          jumpSequence = [];
+        }
+      } 
+      else {
+        if (newValue < bestScore) {
+            bestScore = newValue;
+            resultSucc.Path.push(legalMoves[i]);
+            bestPath = resultSucc;
+            jumpeSequence = [];
+        }
+      }
+    }
+  }
+
+  bestPath.Value = bestScore;
+  return bestPath;
 };
 
 
@@ -596,22 +643,251 @@ Checkers.prototype.staticEval = function(board) {
         if (piece == 'wP') {
           score += 2;
           score += this.pieceBonus[r][c];
-          console.log('gained ' + this.pieceBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+          //console.log('gained ' + this.pieceBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
         } else if (piece == 'wK') {
           score += 9;
           score += this.kingBonus[r][c];
-          console.log('gained ' + this.kingBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+          //console.log('gained ' + this.kingBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
         } else if (piece == 'bP') {
           score -= 2; 
           score -= this.pieceBonus[r][c];
-          console.log('lost ' + this.pieceBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+          //console.log('lost ' + this.pieceBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
         } else {  // piece == 'bK' 
           score -= 9; 
           score -= this.kingBonus[r][c];
-          console.log('lost ' + this.kingBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
+          //console.log('lost ' + this.kingBonus[r][c] + ' position points' + ' for square [' + r + ',' + c + ']');
         }
     }
   }  
 
   return score;
+};
+
+Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
+  var boardCopy;
+  if (jumpSequence == undefined) var jumpSequence = [];
+  var r2;
+  var c2;
+
+  // check all rows (greatly simplifies)
+  for (var r = 0; r < 8; ++r) {
+    for (var c = 0; c < 8; ++c) {
+      // list all legal forward jumps for the piece
+      if (board[r][c][0] == 'b') {
+        // check if jumping NW is illegal
+        r2 = r - 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }
+
+        // check if jumping NE is illegal
+        r2 = r - 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }
+      }
+
+      // add legal backward jumps for the king
+      if (board[r][c] == 'bK') {
+        // check if jumping SW is illegal
+        r2 = r + 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }
+
+        // check if jumping SE is illegal
+        r2 = r + 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }        
+      }
+    }
+  }
+};
+
+Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
+  var boardCopy;
+  if (jumpSequence == undefined) var jumpSequence = [];
+  var r2;
+  var c2;
+
+  // check all rows (greatly simplifies)
+  for (var r = 0; r < 8; ++r) {
+    for (var c = 0; c < 8; ++c) {
+      // list all legal forward jumps for the piece
+      if (board[r][c][0] == 'w') {
+        // check if jumping SW is illegal
+        r2 = r + 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }
+
+        // check if jumping SE is illegal
+        r2 = r + 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }
+      }
+
+      // add legal backward jumps for the king
+      if (board[r][c] == 'wK') {
+        // check if jumping NW is illegal
+        r2 = r - 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }
+
+        // check if jumping NE is illegal
+        r2 = r - 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          jumpSequence = [];  // clear stale jump vector
+        }        
+      }
+    }
+  }
+};
+
+Checkers.prototype.moveGen = function(board, player, legalMoves, legalJumps) {
+  // check if jumps are available (one must be taken)
+  if (player == 'w') {
+    this.jumpGenWhite(board, legalJumps);
+  } else {
+    this.jumpGenBlack(board, legalJumps);
+  }
+
+  // if any legal jumps exist, then no need to generate moves
+  if (legalJumps.length > 0) {
+    return;
+  }
+
+  var r2;
+  var c2;
+
+  // list all legal black moves
+  if (player == 'b') {
+    // check all rows (for simplicity)
+    for (var r = 0; r < 8; ++r) {
+      for (var c = 0; c < 8; ++c) {
+        // list all legal forward moves for the piece
+        if (board[r][c][0] == 'b') {
+          // check if moving NW is illegal
+          r2 = r - 1;
+          c2 = c - 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }
+
+          // check if moving NE is illegal
+          r2 = r - 1;
+          c2 = c + 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }
+        }
+
+        // add legal backward moves for the king
+        if (board[r][c] == 'bK') {
+          // check if moving SW is illegal
+          r2 = r + 1;
+          c2 = c - 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }
+
+          // check if moving SE is illegal
+          r2 = r + 1;
+          c2 = c + 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }          
+        }
+      }
+    }
+  } else { // player == 'w'
+    // check all rows (for simplicity)
+    for (var r = 0; r < 8; ++r) {
+      for (var c = 0; c < 8; ++c) {
+        // list all legal forward moves for the piece
+        if (board[r][c][0] == 'w') {
+          // check if moving SW is illegal
+          r2 = r + 1;
+          c2 = c - 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }
+
+          // check if moving SE is illegal
+          r2 = r + 1;
+          c2 = c + 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }
+        }
+
+        // add legal backward moves for the king
+        if (board[r][c] == 'wK') {
+          // check if moving NW is illegal
+          r2 = r - 1;
+          c2 = c - 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }
+
+          // check if moving NE is illegal
+          r2 = r - 1;
+          c2 = c + 1;
+          if (!this.isIllegalMove(r, c, r2, c2, player, board)) {
+            legalMoves.push([r, c, r2, c2]);
+          }          
+        }
+      }
+    }
+  }
+};
+
+Checkers.prototype.deepEnough = function(depth) {
+  if (depth > this.depthCutoff)
+    return true;
+  else
+    return false;
 };
