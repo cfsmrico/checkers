@@ -568,8 +568,8 @@ Checkers.prototype.minimax = function(board, depth, player) {
       bCopy = board.clone();
 
       for (var k = 0; k < legalJumps[i].length; ++k) {
-        move = legalJumps[i][k];
-        this.jumpNoCheck(move[0], move[1], move[2], move[3], bCopy);
+        this.move = legalJumps[i][k];
+        this.jumpNoCheck(this.move[0], this.move[1], this.move[2], this.move[3], bCopy);
       }
 
       resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
@@ -594,8 +594,8 @@ Checkers.prototype.minimax = function(board, depth, player) {
   else {  // !legalMoves.empty()
     for (var i = 0; i < legalMoves.length; ++i) {
       bCopy = board.clone();
-      move = legalMoves[i];
-      this.moveNoCheck(move[0], move[1], move[2], move[3], bCopy);
+      this.move = legalMoves[i];
+      this.moveNoCheck(this.move[0], this.move[1], this.move[2], this.move[3], bCopy);
       resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
       newValue = resultSucc.Value;
 
@@ -612,7 +612,7 @@ Checkers.prototype.minimax = function(board, depth, player) {
             bestScore = newValue;
             resultSucc.Move = legalMoves[i];
             bestPath = resultSucc;
-            jumpeSequence = [];
+            jumpSequence = [];
         }
       }
     }
