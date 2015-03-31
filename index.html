@@ -96,12 +96,54 @@ var onDrop = function(source, target) {
   updateStatus(msg);
 };
 
+var takeAiTurn = function() {
+  // take ai turn
+  var minMaxResult = game.minimax(game.square, 5, 'b');
+  console.log(minMaxResult);
+  var jS = minMaxResult.Jump;
+
+  if (jS.length > 0) { // if a jump is available, take it
+    for (var i = 0; i < jS.length; ++i) {
+      var r1 = jS[i][0];
+      var c1 = jS[i][1];
+      var r2 = jS[i][2];
+      var c2 = jS[i][3];        
+      console.log(r1); console.log(c1); console.log(r2); console.log(c2);
+      game.jumpNoCheck(r1, c1, r2, c2); // update internal game
+      board.move(game.colToFile(c1) + (r1 + 1) + '-' + game.colToFile(c2) + (r2 + 1));  // update gui
+
+      var position = game.getPosition();
+      console.log(position);
+      board.position(position);
+    }
+  } else {
+    var r1 = minMaxResult.Move[0];
+    var c1 = minMaxResult.Move[1];
+    var r2 = minMaxResult.Move[2];
+    var c2 = minMaxResult.Move[3];
+    console.log('moving...');  console.log(r1); console.log(c1); console.log(r2); console.log(c2);
+    game.moveNoCheck(r1, c1, r2, c2); // update internal game
+    board.move(game.colToFile(c1) + (r1 + 1) + '-' + game.colToFile(c2) + (r2 + 1));  // update gui
+
+    var position = game.getPosition();
+    console.log(position);
+    board.position(position);
+  }
+
+  currentPlayer = 'w'; 
+  updateStatus();
+};
+
 // update the board position after the piece snap 
 // for castling, en passant, pawn promotion
 var onSnapEnd = function() {
   var position = game.getPosition();
   console.log(position);
   board.position(position);
+
+  if (currentPlayer == 'b') {
+    takeAiTurn();
+  }
 };
 
 var updateStatus = function(msg) {
@@ -149,11 +191,14 @@ var cfg = {
   onDragStart: onDragStart,
   onDrop: onDrop,
   onSnapEnd: onSnapEnd,
+  snapBackSpeed: 500,
+  snapSpeed: 100,
+  moveSpeed: 'slow'
 };
 
 board = new ChessBoard('board', cfg);
 
-updateStatus();
+//updateStatus();
 </script>
 </body>
 </html>

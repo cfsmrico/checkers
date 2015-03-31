@@ -580,6 +580,7 @@ Checkers.prototype.minimax = function(board, depth, player) {
           bestScore = newValue;
           resultSucc.Jump = legalJumps[i];
           bestPath = resultSucc;
+          bestPath.Move = [];
         } 
       }
       else {
@@ -587,6 +588,7 @@ Checkers.prototype.minimax = function(board, depth, player) {
            bestScore = newValue;
            resultSucc.Jump = legalJumps[i];
            bestPath = resultSucc;
+           bestPath.Move = [];
         }
       }
     }
@@ -681,7 +683,11 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }
 
@@ -692,7 +698,10 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }          
           jumpSequence = [];  // clear stale jump vector
         }
       }
@@ -706,7 +715,11 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }
 
@@ -717,15 +730,15 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }        
       }
     }
-  }
-
-  if (jumpSequence.length > 0) {
-    legalJumps.push(jumpSequence);
   }
 };
 
@@ -747,7 +760,11 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }
 
@@ -758,7 +775,11 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }
       }
@@ -772,7 +793,11 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }
 
@@ -783,7 +808,11 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
+          if (jumpSequence.length > 0) {
+            legalJumps.push(jumpSequence);
+          }
+
           jumpSequence = [];  // clear stale jump vector
         }        
       }
