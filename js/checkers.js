@@ -315,11 +315,11 @@ Checkers.prototype.getPosition = function() {
  *    If moving the piece from square[r1][c1] to square[r2][c2]
  *  violates Checkers rules, then return true, and false otherwise.
  */
-Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player, square) {
+Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player, board) {
   if (r2 < 0 || c2 < 0 || r2 > 7 || c2 > 7)  // out of bounds
     return true;
 
-  var square = square == undefined ? this.square : square;
+  var square = board == undefined ? this.square : board;
 
   if (square[r2][c2] != '') // square not empty
     return true;
@@ -344,11 +344,11 @@ Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player, square) {
  *    If moving the piece from square[r1][c1] to square[r2][c2]
  *  violates Checkers rules, then return true, and false otherwise.
  */
-Checkers.prototype.isIllegalJump = function(r1, c1, r2, c2, player, square) {
+Checkers.prototype.isIllegalJump = function(r1, c1, r2, c2, player, board) {
   if (r2 < 0 || c2 < 0 || r2 > 7 || c2 > 7)  // out of bounds
     return true;
 
-  var square = square == undefined ? this.square : square;
+  var square = board == undefined ? this.square : board;
 
   if (square[r2][c2] != '')  // square2 not empty
     return true;
@@ -541,11 +541,11 @@ Checkers.prototype.opposite = function(player) {
 // here we go...
 Checkers.prototype.minimax = function(board, depth, player) {
   var bCopy;
-  var valuePath = {Path: [], Value: 0};
-  var resultSucc = {Path: [], Value: 0};
+  var valuePath = {Jump: [], Move: [], Value: 0};
+  var resultSucc = {Jump: [], Move: [], Value: 0};
   var legalMoves = [];
   var legalJumps = [];
-  var bestPath = {Path: [], Value: 0};
+  var bestPath = {Jump: [], Move: [], Value: 0};
   var jumpSequence = [];
 
   if (depth == 0 || this.gameOver(player, this.getPositionOf(board))) {
@@ -573,19 +573,19 @@ Checkers.prototype.minimax = function(board, depth, player) {
       }
 
       resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
-      newValue = -resultSucc.Value;
+      newValue = resultSucc.Value;
 
       if (player == 'w') {
         if (newValue > bestScore) {
           bestScore = newValue;
-          resultSucc.Path.push(legalJumps[i]);
+          resultSucc.Jump = legalJumps[i];
           bestPath = resultSucc;
         } 
       }
       else {
         if (newValue < bestScore) {
            bestScore = newValue;
-           resultSucc.Path.push(legalJumps[i]);
+           resultSucc.Jump = legalJumps[i];
            bestPath = resultSucc;
         }
       }
@@ -597,12 +597,12 @@ Checkers.prototype.minimax = function(board, depth, player) {
       move = legalMoves[i];
       this.moveNoCheck(move[0], move[1], move[2], move[3], bCopy);
       resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
-      newValue = -resultSucc.Value;
+      newValue = resultSucc.Value;
 
       if (player == 'w') {
         if (newValue > bestScore) {
           bestScore = newValue;
-          resultSucc.Path.push(legalMoves[i]);
+          resultSucc.Move = legalMoves[i];
           bestPath = resultSucc;
           jumpSequence = [];
         }
@@ -610,7 +610,7 @@ Checkers.prototype.minimax = function(board, depth, player) {
       else {
         if (newValue < bestScore) {
             bestScore = newValue;
-            resultSucc.Path.push(legalMoves[i]);
+            resultSucc.Move = legalMoves[i];
             bestPath = resultSucc;
             jumpeSequence = [];
         }
@@ -677,7 +677,7 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
         // check if jumping NW is illegal
         r2 = r - 2;
         c2 = c - 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
@@ -688,7 +688,7 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
         // check if jumping NE is illegal
         r2 = r - 2;
         c2 = c + 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
@@ -702,7 +702,7 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
         // check if jumping SW is illegal
         r2 = r + 2;
         c2 = c - 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
@@ -713,7 +713,7 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
         // check if jumping SE is illegal
         r2 = r + 2;
         c2 = c + 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
@@ -722,6 +722,10 @@ Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
         }        
       }
     }
+  }
+
+  if (jumpSequence.length > 0) {
+    legalJumps.push(jumpSequence);
   }
 };
 
@@ -739,22 +743,22 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
         // check if jumping SW is illegal
         r2 = r + 2;
         c2 = c - 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
           jumpSequence = [];  // clear stale jump vector
         }
 
         // check if jumping SE is illegal
         r2 = r + 2;
         c2 = c + 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
           jumpSequence = [];  // clear stale jump vector
         }
       }
@@ -764,27 +768,31 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
         // check if jumping NW is illegal
         r2 = r - 2;
         c2 = c - 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
           jumpSequence = [];  // clear stale jump vector
         }
 
         // check if jumping NE is illegal
         r2 = r - 2;
         c2 = c + 2;
-        if (!this.isIllegalJump(r, c, r2, c2, board)) {
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
           jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
+          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence); // build jump-sequence
           jumpSequence = [];  // clear stale jump vector
         }        
       }
     }
   }
+
+  if (jumpSequence.length > 0) {
+    legalJumps.push(jumpSequence);
+  }  
 };
 
 Checkers.prototype.moveGen = function(board, player, legalMoves, legalJumps) {
