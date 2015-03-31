@@ -560,10 +560,10 @@ Checkers.prototype.minimax = function(board, depth, player) {
     return valuePath;
   }
 
-  var bestScore = player == 'w' ? Number.MIN_VALUE : Number.MAX_VALUE;
+  var bestScore = player == 'w' ? -255 : 255;
   var newValue;
 
-  if (!legalJumps.length < 1) {
+  if (legalJumps.length > 0) {
     for (var i = 0; i < legalJumps.length; ++i) {
       bCopy = board.clone();
 
@@ -604,15 +604,15 @@ Checkers.prototype.minimax = function(board, depth, player) {
           bestScore = newValue;
           resultSucc.Move = legalMoves[i];
           bestPath = resultSucc;
-          jumpSequence = [];
+          bestPath.Jump = [];
         }
       } 
       else {
         if (newValue < bestScore) {
-            bestScore = newValue;
-            resultSucc.Move = legalMoves[i];
-            bestPath = resultSucc;
-            jumpSequence = [];
+          bestScore = newValue;
+          resultSucc.Move = legalMoves[i];
+          bestPath = resultSucc;
+          bestPath.Jump = [];
         }
       }
     }
