@@ -344,13 +344,16 @@ Checkers.prototype.getPositionOf = function(board) {
 Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player, board) {
   if (r2 < 0 || c2 < 0 || r2 > 7 || c2 > 7)  // out of bounds
     return true;
+  if (r1 < 0 || c1 < 0 || r1 > 7 || r2 > 7)
+    return true;
 
   var square = board == undefined ? this.square : board;
 
   if (square[r2][c2] != '') // square not empty
     return true;
-  if (square[r1][c1] == '' || square[r1][c1][0] != player)
+  if (square[r1][c1] == '' || square[r1][c1] == undefined || square[r1][c1][0] != player) {
     return true;
+  }
   else if (r2 != r1 + 1 && r2 != r1 - 1)  // invalid row2;
     return true;
   else if (c2 != c1 + 1 && c2 != c1 - 1)  // invalid col2
@@ -373,12 +376,14 @@ Checkers.prototype.isIllegalMove = function(r1, c1, r2, c2, player, board) {
 Checkers.prototype.isIllegalJump = function(r1, c1, r2, c2, player, board) {
   if (r2 < 0 || c2 < 0 || r2 > 7 || c2 > 7)  // out of bounds
     return true;
+  if (r1 < 0 || c1 < 0 || r1 > 7 || c2 > 7)
+    return true;
 
   var square = board == undefined ? this.square : board;
 
   if (square[r2][c2] != '')  // square2 not empty
     return true;
-  if (square[r1][c1] == '' || square[r1][c1][0] != player)
+  if (square[r1][c1] == '' || square[r1][c1] == undefined || square[r1][c1][0] != player)
     return true;
   else if (r2 != r1 + 2 && r2 != r1 - 2)  // invalid row2
     return true;
@@ -550,8 +555,9 @@ Checkers.prototype.moveNoCheck = function(r1, c1, r2, c2, board) {
   else if (r2 == 7 && square[r1][c1] == 'wP') {
     square[r2][c2] = 'wK';   // crown the white piece
   }
-  else
+  else {
     square[r2][c2] = square[r1][c1];
+  }
 
   square[r1][c1] = '';
 };
@@ -1018,3 +1024,7 @@ Checkers.prototype.deepEnough = function(depth) {
   else
     return false;
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Checkers;
+}
