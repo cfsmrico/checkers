@@ -5,7 +5,6 @@ function Checkers() {
 
 // reset the game to a standard Checkers game
 Checkers.prototype.resetGame = function() {
-
   // populate representation of a new Checkers board
   this.square = [
     ['wP', '', 'wP', '', 'wP', '', 'wP', ''],
@@ -18,7 +17,6 @@ Checkers.prototype.resetGame = function() {
     ['', 'bP', '', 'bP', '', 'bP', '', 'bP']
   ];
 
-  // init running piece count
   this.move;
 
   this.pieceBonus = [
@@ -276,7 +274,53 @@ Checkers.prototype.fileToCol = function(file) {
   }
 };
 
+// print the contents of square to the console
+Checkers.prototype.printBoard = function(board) {
+  var square = board == undefined ? this.square : board;
+
+  for (var row = 7; row >= 0; --row)
+  {
+    var output = "\n" + (row+1) + " | ";
+
+    for (var col = 0; col < 8; ++col)
+    {
+      switch (square[row][col])
+      {
+      case '':
+        output += " -  ";
+        break;
+      case 'wP':
+        output += " wP ";
+        break;
+      case 'bP':
+        output += " bP ";
+        break;
+      case 'wK':
+        output += " wK*";
+        break;
+      case 'bK':
+        output += " bK*";
+        break;
+      default:
+        output += " -  ";
+        break;
+      }
+    }
+
+    console.log(output);
+  }
+
+  console.log("\n  |------------------------------------");
+  console.log("\n      a   b   c   d   e   f   g   h\n\n");
+};
+
+Checkers.prototype.getPosition = function() {
+  return this.getPositionOf(this.square);
+};
+
+// return a position object from square representation
 Checkers.prototype.getPositionOf = function(board) {
+  var square = board == undefined ? this.square : board;
   var position = {};
 
   for (var c = 0; c < 8; ++c) {
@@ -284,32 +328,14 @@ Checkers.prototype.getPositionOf = function(board) {
       var file = this.colToFile(c);
       var rank = r + 1;
 
-      if (board[r][c] != '') {
-        position[file + rank] = board[r][c];
+      if (square[r][c] != '') {
+        position[file + rank] = square[r][c];
       }
     }
   }
 
   return position;  
 }
-
-// return a position object from square representation
-Checkers.prototype.getPosition = function() {
-  var position = {};
-
-  for (var c = 0; c < 8; ++c) {
-    for (var r = 0; r < 8; ++r) {
-      var file = this.colToFile(c);
-      var rank = r + 1;
-
-      if (this.square[r][c] != '') {
-        position[file + rank] = this.square[r][c];
-      }
-    }
-  }
-
-  return position;
-};
 
 /*
  *    If moving the piece from square[r1][c1] to square[r2][c2]
@@ -567,9 +593,10 @@ Checkers.prototype.minimax = function(board, depth, player) {
     for (var i = 0; i < legalJumps.length; ++i) {
       bCopy = board.clone();
 
-      for (var k = 0; k < legalJumps[i].length; ++k) {
-        this.move = legalJumps[i][k];
-        this.jumpNoCheck(this.move[0], this.move[1], this.move[2], this.move[3], bCopy);
+      var js = legalJumps[i].split(';');
+      for (var k = 0; k < js.length - 1; ++k) {
+        var jump = js[k];
+        this.jumpNoCheck(jump[0], jump[1], jump[2], jump[3], bCopy);
       }
 
       resultSucc = this.minimax(bCopy, depth - 1, this.opposite(player));
@@ -665,86 +692,8 @@ Checkers.prototype.staticEval = function(board) {
   return score;
 };
 
-Checkers.prototype.jumpGenBlack = function(board, legalJumps, jumpSequence) {
+Checkers.prototype.genJumpSequenceWhite = function(board, legalJumps, jumpSequence) {
   var boardCopy;
-  if (jumpSequence == undefined) var jumpSequence = [];
-  var r2;
-  var c2;
-
-  // check all rows (greatly simplifies)
-  for (var r = 0; r < 8; ++r) {
-    for (var c = 0; c < 8; ++c) {
-      // list all legal forward jumps for the piece
-      if (board[r][c][0] == 'b') {
-        // check if jumping NW is illegal
-        r2 = r - 2;
-        c2 = c - 2;
-        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
-          boardCopy = board.clone();  // copy position
-          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
-        }
-
-        // check if jumping NE is illegal
-        r2 = r - 2;
-        c2 = c + 2;
-        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
-          boardCopy = board.clone();  // copy position
-          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }          
-          jumpSequence = [];  // clear stale jump vector
-        }
-      }
-
-      // add legal backward jumps for the king
-      if (board[r][c] == 'bK') {
-        // check if jumping SW is illegal
-        r2 = r + 2;
-        c2 = c - 2;
-        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
-          boardCopy = board.clone();  // copy position
-          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
-        }
-
-        // check if jumping SE is illegal
-        r2 = r + 2;
-        c2 = c + 2;
-        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
-          boardCopy = board.clone();  // copy position
-          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenBlack(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
-        }        
-      }
-    }
-  }
-};
-
-Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
-  var boardCopy;
-  if (jumpSequence == undefined) var jumpSequence = [];
   var r2;
   var c2;
 
@@ -757,30 +706,18 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
         r2 = r + 2;
         c2 = c - 2;
         if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
         }
 
         // check if jumping SE is illegal
         r2 = r + 2;
         c2 = c + 2;
         if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
         }
       }
 
@@ -790,30 +727,18 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
         r2 = r - 2;
         c2 = c - 2;
         if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
         }
 
         // check if jumping NE is illegal
         r2 = r - 2;
         c2 = c + 2;
         if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
-          jumpSequence.push([r, c, r2, c2]);  // push jump into jump-sequence
           boardCopy = board.clone();  // copy position
           this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
-          this.jumpGenWhite(boardCopy, legalJumps, jumpSequence.clone()); // build jump-sequence
-          if (jumpSequence.length > 0) {
-            legalJumps.push(jumpSequence);
-          }
-
-          jumpSequence = [];  // clear stale jump vector
+          this.genJumpSequenceWhite(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
         }        
       }
     }
@@ -822,6 +747,171 @@ Checkers.prototype.jumpGenWhite = function(board, legalJumps, jumpSequence) {
   if (jumpSequence.length > 0) {
     legalJumps.push(jumpSequence);
   }  
+};
+
+Checkers.prototype.genJumpSequenceBlack = function(board, legalJumps, jumpSequence) {
+  var boardCopy;
+  var r2;
+  var c2;
+
+  // check all rows (greatly simplifies)
+  for (var r = 0; r < 8; ++r) {
+    for (var c = 0; c < 8; ++c) {
+      // list all legal forward jumps for the piece
+      if (board[r][c][0] == 'b') {
+        // check if jumping NW is illegal
+        r2 = r - 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+
+        // check if jumping NE is illegal
+        r2 = r - 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+      }
+
+      // add legal backward jumps for the king
+      if (board[r][c] == 'bK') {
+        // check if jumping SW is illegal
+        r2 = r + 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+
+        // check if jumping SE is illegal
+        r2 = r + 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, jumpSequence.slice(0) + r + c + r2 + c2 + ';'); // build jump-sequence
+        }        
+      }
+    }
+  }
+
+  if (jumpSequence.length > 0) {
+    legalJumps.push(jumpSequence);
+  }
+};
+
+Checkers.prototype.jumpGenBlack = function(board, legalJumps) {
+  var boardCopy;
+  var jumpSequence = '';
+  var r2;
+  var c2;
+
+  // check all rows (greatly simplifies)
+  for (var r = 0; r < 8; ++r) {
+    for (var c = 0; c < 8; ++c) {
+      // list all legal forward jumps for the piece
+      if (board[r][c][0] == 'b') {
+        // check if jumping NW is illegal
+        r2 = r - 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+
+        // check if jumping NE is illegal
+        r2 = r - 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+      }
+
+      // add legal backward jumps for the king
+      if (board[r][c] == 'bK') {
+        // check if jumping SW is illegal
+        r2 = r + 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+
+        // check if jumping SE is illegal
+        r2 = r + 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'b', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceBlack(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }        
+      }
+    }
+  }
+};
+
+Checkers.prototype.jumpGenWhite = function(board, legalJumps) {
+  var boardCopy;
+  var jumpSequence = '';
+  var r2;
+  var c2;
+
+  // check all rows (greatly simplifies)
+  for (var r = 0; r < 8; ++r) {
+    for (var c = 0; c < 8; ++c) {
+      // list all legal forward jumps for the piece
+      if (board[r][c][0] == 'w') {
+        // check if jumping SW is illegal
+        r2 = r + 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+
+        // check if jumping SE is illegal
+        r2 = r + 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+      }
+
+      // add legal backward jumps for the king
+      if (board[r][c] == 'wK') {
+        // check if jumping NW is illegal
+        r2 = r - 2;
+        c2 = c - 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }
+
+        // check if jumping NE is illegal
+        r2 = r - 2;
+        c2 = c + 2;
+        if (!this.isIllegalJump(r, c, r2, c2, 'w', board)) {
+          boardCopy = board.clone();  // copy position
+          this.jumpNoCheck(r, c, r2, c2, boardCopy);  // alter position
+          this.genJumpSequenceWhite(boardCopy, legalJumps, '' + r + c + r2 + c2 + ';'); // build jump-sequence
+        }        
+      }
+    }
+  }
 };
 
 Checkers.prototype.moveGen = function(board, player, legalMoves, legalJumps) {
